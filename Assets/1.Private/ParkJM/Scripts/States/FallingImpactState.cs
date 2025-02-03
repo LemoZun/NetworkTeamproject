@@ -1,28 +1,27 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class FallingImpact : PlayerState
+namespace _1.Private.ParkJM.Scripts.States
 {
-    public FallingImpact(PlayerController player) : base(player)
+    public class FallingImpact : PlayerState
     {
-    }
+        public FallingImpact(PlayerController player) : base(player)
+        {
+        }
 
-    public override void Enter()
-    {
-        player.view.BroadCastTriggerParameter(E_AniParameters.FallingImpact);
-        player.model.InvokePlayerFloorImpacted();
-    }
+        public override void Enter()
+        {
+            player.view.BroadCastTriggerParameter(E_AniParameters.FallingImpact);
+            player.model.InvokePlayerFloorImpacted();
+        }
 
-    public override void Update()
-    {
-        if (!player.view.IsAnimationFinished())
-            return;
+        public override void Update()
+        {
+            if (!player.view.IsAnimationFinished())
+                return;
         
-        player.ChangeState(E_PlayeState.StandUp);
-    }
+            player.ChangeState(E_PlayeState.StandUp);
+        }
 
-    public override void Exit()
-    {
+        public override void Exit()
+        {
+        }
     }
 }

@@ -1,13 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class PlayerState : BaseState
+namespace _1.Private.ParkJM.Scripts.States
 {
-    public PlayerController player;
-    public PlayerState(PlayerController player)
+    public class PlayerState : BaseState
     {
-        this.player = player;
-    }
+        public PlayerController player;
+        public PlayerState(PlayerController player)
+        {
+            this.player = player;
+        }
 
+    }
 }

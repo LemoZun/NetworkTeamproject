@@ -1,29 +1,26 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class StandUpState : PlayerState
+namespace _1.Private.ParkJM.Scripts.States
 {
-    public StandUpState(PlayerController player) : base(player)
+    public class StandUpState : PlayerState
     {
-        //animationIndex = (int)E_PlayeState.StandUp;
-    }
+        public StandUpState(PlayerController player) : base(player)
+        {
+            //animationIndex = (int)E_PlayeState.StandUp;
+        }
 
-    public override void Enter()
-    {
-        player.view.BroadCastTriggerParameter(E_AniParameters.StandingUp);
-        //player.view.PlayAnimation(animationIndex);
-    }
+        public override void Enter()
+        {
+            player.view.BroadCastTriggerParameter(E_AniParameters.StandingUp);
+        }
 
-    public override void Update()
-    {
-        if (!player.view.IsAnimationFinished())
-            return;
-        //if(player.isGrounded)
+        public override void Update()
+        {
+            if (!player.view.IsAnimationFinished())
+                return;
             player.ChangeState(E_PlayeState.Idle);
-    }
+        }
 
-    public override void Exit()
-    {
+        public override void Exit()
+        {
+        }
     }
 }

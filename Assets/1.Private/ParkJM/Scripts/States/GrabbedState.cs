@@ -1,37 +1,38 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class GrabbedState : PlayerState
+namespace _1.Private.ParkJM.Scripts.States
 {
-    public GrabbedState(PlayerController player) : base(player)
+    public class GrabbedState : PlayerState
     {
-
-    }
-
-    public override void Enter()
-    {
-        player.view.SetBoolParameter(E_AniParameters.Struggling, true);
-        player.model.InvokePlayerGrabbed();
-        player.rb.velocity = Vector3.zero;
-    }
-
-    public override void Update()
-    {
-        // 임시 잡힌상태 나가기
-        if(player.jumpBufferCounter > 0f && player.isJumpable)
+        public GrabbedState(PlayerController player) : base(player)
         {
-            player.ChangeState(E_PlayeState.Jump);
+
         }
-    }
 
-    public override void FixedUpdate()
-    {
+        public override void Enter()
+        {
+            player.view.SetBoolParameter(E_AniParameters.Struggling, true);
+            player.model.InvokePlayerGrabbed();
+            player.rb.velocity = Vector3.zero;
+        }
+
+        public override void Update()
+        {
+            // 임시 잡힌상태 나가기
+            if(player.jumpBufferCounter > 0f && player.isJumpable)
+            {
+                player.ChangeState(E_PlayeState.Jump);
+            }
+        }
+
+        public override void FixedUpdate()
+        {
         
-    }
+        }
 
-    public override void Exit()
-    {
-        player.view.SetBoolParameter(E_AniParameters.Struggling, false);
+        public override void Exit()
+        {
+            player.view.SetBoolParameter(E_AniParameters.Struggling, false);
+        }
     }
 }
