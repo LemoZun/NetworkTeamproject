@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using _2.Public.Interfaces;
 using UnityEngine;
 
 public class GrabbableObject : MonoBehaviour, IGrabbable

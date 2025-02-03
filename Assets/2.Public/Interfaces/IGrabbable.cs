@@ -1,9 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public interface IGrabbable 
+namespace _2.Public.Interfaces
 {
-    public void OnGrabbedEnter();
-    public void OnGrabbedLeave();
+    public interface IGrabbable 
+    {
+        public void OnGrabbedEnter();
+        public void OnGrabbedLeave();
+    }
 }

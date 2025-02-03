@@ -4,10 +4,11 @@ namespace _1.Private.ParkJM.Scripts.States
 {
     public class RunState : PlayerState
     {
-        Vector3 targetVelocity;
+        private Vector3 targetVelocity;
+        private float _rotationSpeed;
         public RunState(PlayerController player) : base(player)
         {
-            //animationIndex = (int)E_PlayeState.Run;
+            _rotationSpeed = 15.0f;
         }
 
         public override void Enter()
@@ -74,17 +75,16 @@ namespace _1.Private.ParkJM.Scripts.States
         }
         private void LookForward()
         {
-            if (player.moveDir != Vector3.zero)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(player.moveDir);
-                targetRotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
+            if (player.moveDir == Vector3.zero)
+                return;
+            Quaternion targetRotation = Quaternion.LookRotation(player.moveDir);
+            targetRotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
 
-                player.transform.rotation = Quaternion.Slerp(
-                    player.transform.rotation,
-                    targetRotation,
-                    Time.fixedDeltaTime * 15
-                );
-            }
+            player.transform.rotation = Quaternion.Slerp(
+                player.transform.rotation,
+                targetRotation,
+                Time.fixedDeltaTime * _rotationSpeed
+            );
         }
     }
 }

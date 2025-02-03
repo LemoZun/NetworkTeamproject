@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using _1.Private.ParkJM.Scripts.States;
+using _2.Public.Interfaces;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -329,21 +330,14 @@ public class PlayerController : MonoBehaviourPun, IGrabbable
 
     public GameObject CheckGrabPoint()
     {
-        Collider[] grabbedColliders;
+        var grabbedColliders = Physics.OverlapSphere(grabPoint.position, model.grabRadius, ignoreWallCheckLayer);
 
-        grabbedColliders = Physics.OverlapSphere(grabPoint.position, model.grabRadius, ignoreWallCheckLayer);
-
-        if (grabbedColliders.Length > 0)
-        {
-            //IGrabbable grabbableObject = grabbedColliders[0].GetComponent<IGrabbable>();
-            if(grabbedColliders[0].TryGetComponent<IGrabbable>(out IGrabbable grabbableObject))
-            {
-                //Debug.Log("grabbable 오브젝트 잡음");
-                grabbableObject.OnGrabbedEnter();
-                return grabbedColliders[0].gameObject;
-            }
-        }
-        return null;
+        if (grabbedColliders.Length <= 0) 
+            return null;
+        if (!grabbedColliders[0].TryGetComponent(out IGrabbable draggableObject)) 
+            return null;
+        draggableObject.OnGrabbedEnter();
+        return grabbedColliders[0].gameObject;
     }
 
     // 전체 다 잡기
@@ -353,12 +347,11 @@ public class PlayerController : MonoBehaviourPun, IGrabbable
 
         foreach (Collider col in grabbedColliders)
         {
-            IGrabbable grabbableObject = col.GetComponent<IGrabbable>();
-            if (grabbableObject != null)
-            {
-                grabbableObject.OnGrabbedEnter();
-                return col.gameObject;
-            }
+            IGrabbable draggableObject = col.GetComponent<IGrabbable>();
+            if (draggableObject == null) 
+                continue;
+            draggableObject.OnGrabbedEnter();
+            return col.gameObject;
         }
 
         return null;
@@ -404,9 +397,6 @@ public class PlayerController : MonoBehaviourPun, IGrabbable
     {
         // 사운드매니저, 이펙트 매니저 등의 동작 설정
         SoundManager.Instance.Play(transform.position, E_StageSFX.S_Jump, E_NetworkType.Public);
-        //EffectManager.Instance.PlayFX(transform.position, E_VFX.);
-        //SoundManager.Instance.
-
     }
 
     private void HandleDiving()

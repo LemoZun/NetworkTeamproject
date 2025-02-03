@@ -1,4 +1,5 @@
 using System.Collections;
+using _2.Public.Interfaces;
 using UnityEngine;
 
 namespace _1.Private.ParkJM.Scripts.States
@@ -6,30 +7,19 @@ namespace _1.Private.ParkJM.Scripts.States
     public class GrabbingState : PlayerState
     {
         private GameObject grabbedObject;
-        //private GameObject curGrabbedObject;
-        private float moveSpeedOnGrab;
-        private Vector3 targetVelocity;
-        private float grabSearchTime = 1.0f;
-        private float grabSearchCounter;
+        private readonly float _moveSpeedOnGrab;
         private Coroutine grabCheckRoutine;
-    
+        private const float GrabSpeedOffset = 0.2f;
+
         public GrabbingState(PlayerController player) : base(player)
         {
-            moveSpeedOnGrab = player.model.moveSpeed * 0.2f;
+            _moveSpeedOnGrab = player.model.moveSpeed * GrabSpeedOffset;
         }
         public override void Enter()
         {
-            //EffectManager.Instance.PlayFX(player.grabPoint.transform.position, E_VFX.Grab, E_NetworkType.Public);
             grabbedObject = null;
-            grabSearchCounter = 0;
             player.view.SetBoolParameter(E_AniParameters.Pushing, true);
-            //player.view.SetBoolInGrabAnimation(0, true);
-            //player.view.UpSpine();
-
-            if(grabCheckRoutine == null)
-            {
-                grabCheckRoutine = player.StartCoroutine(CheckGrabPointRoutine());
-            }
+            grabCheckRoutine ??= player.StartCoroutine(CheckGrabPointRoutine());
         }
 
         public override void Update()
@@ -38,22 +28,7 @@ namespace _1.Private.ParkJM.Scripts.States
             {
                 ReleaseGrabbedObject();
                 player.ChangeState(E_PlayeState.Idle);
-                return;
             }
-
-            //if (grabbedObject == null)
-            //{
-            //    grabSearchCounter += Time.deltaTime;
-            //    if (grabSearchCounter >= grabSearchTime)
-            //    {
-            //        player.ChangeState(E_PlayeState.Idle);
-            //        return;
-            //    }
-            //}
-            //else
-            //{
-            //    grabSearchCounter = 0f;
-            //}
         }
 
         public override void FixedUpdate()
@@ -76,12 +51,9 @@ namespace _1.Private.ParkJM.Scripts.States
         public override void Exit()
         {
             ReleaseGrabbedObject();
-            grabSearchCounter = 0f;
             player.view.SetBoolParameter(E_AniParameters.Pushing, false);
             player.view.SetBoolParameter(E_AniParameters.Pulling, false);
-            //player.view.SetBoolInGrabAnimation(0, false);
-            //player.view.SetBoolInGrabAnimation(1, false);
-
+            
             if (grabCheckRoutine != null)
             {
                 player.StopCoroutine(grabCheckRoutine);
@@ -91,27 +63,26 @@ namespace _1.Private.ParkJM.Scripts.States
 
         private void ReleaseGrabbedObject()
         {
-            if (grabbedObject != null)
-            {
-                grabbedObject.GetComponent<IGrabbable>().OnGrabbedLeave();
-                grabbedObject = null;
-            }
+            if (grabbedObject == null) 
+                return;
+            grabbedObject.GetComponent<IGrabbable>().OnGrabbedLeave();
+            grabbedObject = null;
         }
 
         private void ApplyMovement()
         {
-            Vector3 targetVelocity;
+            Vector3 targetVel;
             if (player.isSlope)
             {
                 Vector3 slopeDirection = Vector3.ProjectOnPlane(player.moveDir, player.chosenHit.normal).normalized;
-                targetVelocity = slopeDirection * moveSpeedOnGrab;
+                targetVel = slopeDirection * _moveSpeedOnGrab;
             }
             else
             {
-                targetVelocity = player.moveDir * moveSpeedOnGrab;
-                targetVelocity.y = player.rb.velocity.y;
+                targetVel = player.moveDir * _moveSpeedOnGrab;
+                targetVel.y = player.rb.velocity.y;
             }
-            player.rb.velocity = targetVelocity;
+            player.rb.velocity = targetVel;
         }
 
         private IEnumerator CheckGrabPointRoutine()
@@ -123,13 +94,6 @@ namespace _1.Private.ParkJM.Scripts.States
                 if (detectedObject != grabbedObject)
                 {
                     // 잡힌 오브젝트가 바뀌거나, 잡힌 오브젝트가 범위를 벗어났을 때
-
-                    //if (grabbedObject != null) 
-                    //{
-                    //    // 이전에 잡힌 오브젝트가 있을 경우
-                    //    grabbedObject.GetComponent<IGrabbable>().OnGrabbedLeave();
-                    //    Debug.Log($"GrabbedObject 해제: {grabbedObject.name}");
-                    //}
                     ReleaseGrabbedObject();
                     grabbedObject = detectedObject;
 
@@ -137,17 +101,15 @@ namespace _1.Private.ParkJM.Scripts.States
                     {
                         // 새롭게 잡힌 오브젝트가 있을 경우
                         player.model.InvokePlayerGrabbing();
-                        //EffectManager.Instance.PlayFX(player.grabPoint.transform.position, E_VFX.Grab, E_NetworkType.Public);
                     }
                 }
-
                 yield return new WaitForSeconds(0.1f);
             }
         }
 
-        private void PushOrPullGrabbedObject(GameObject grabbedObject)
+        private void PushOrPullGrabbedObject(GameObject grabObject)
         {
-            Rigidbody grabbedObjectRb = grabbedObject.gameObject.GetComponent<Rigidbody>();
+            Rigidbody grabbedObjectRb = grabObject.gameObject.GetComponent<Rigidbody>();
 
             if (grabbedObjectRb == null || grabbedObjectRb.isKinematic)
             {
@@ -161,49 +123,29 @@ namespace _1.Private.ParkJM.Scripts.States
 
             // 내적 계산 후 push인지 pull인지 결정
             float dotProduct = Vector3.Dot(camForward, moveDir);
-            //Debug.Log($"벡터 내적 : {dotProduct}");
 
-            if (dotProduct > 0f)
+            switch (dotProduct)
             {
-                // 밀기
-                //Debug.Log("밀기");
-                grabbedObjectRb.velocity = moveDir * player.model.grabForce;
-                // 밀기 애니메이션 재생
-                // 이미 재생중이라면 애니메이션 중복 재생x 밀기 당기기 바꿀때만 재생
-
-                // 기존
-                //if(!player.view.GetBoolInGrabAnimation(1))
-                //{
-                //    player.view.SetBoolInGrabAnimation(0, false);
-                //    player.view.SetBoolInGrabAnimation(1, true);
-                
-                //}
-                if(!player.view.GetBoolParameter(E_AniParameters.Pushing))
+                case > 0f:
                 {
+                    // 밀기
+                    grabbedObjectRb.velocity = moveDir * player.model.grabForce;
+                    if (player.view.GetBoolParameter(E_AniParameters.Pushing)) 
+                        return;
                     player.view.SetBoolParameter(E_AniParameters.Pushing, true);
                     player.view.SetBoolParameter(E_AniParameters.Pulling, false);
+                    break;
                 }
-
-                //grabbedObjectRb.AddForce(moveDir * player.model.grabForce, ForceMode.Force);
-            }
-            else if(dotProduct < 0f)
-            {
-                // 당기기
-                //Debug.Log("당기기");
-                grabbedObjectRb.velocity = moveDir * player.model.grabForce;
-                //if (!player.view.GetBoolInGrabAnimation(0)) //
-                //{
-                //    player.view.SetBoolInGrabAnimation(1, false); // pull 종료
-                //    player.view.SetBoolInGrabAnimation(0, true); // push 시작
-                //}
-                if(!player.view.GetBoolParameter(E_AniParameters.Pulling))
+                case < 0f:
                 {
+                    // 당기기
+                    grabbedObjectRb.velocity = moveDir * player.model.grabForce;
+                    if (player.view.GetBoolParameter(E_AniParameters.Pulling)) 
+                        return;
                     player.view.SetBoolParameter(E_AniParameters.Pushing, false);
                     player.view.SetBoolParameter(E_AniParameters.Pulling, true);
+                    break;
                 }
-            
-
-                //grabbedObjectRb.AddForce(-moveDir * player.model.grabForce, ForceMode.Force);
             }
 
 
