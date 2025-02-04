@@ -61,7 +61,7 @@ public class PlayerController : MonoBehaviourPun, IGrabbable
     [SerializeField] WallChecker wallChecker;
 
     // 상태
-    [SerializeField] E_PlayeState curState;
+    public E_PlayeState curState;
     private PlayerState[] states = new PlayerState[(int)E_PlayeState.Size];
 
     // 물리 충돌 레이어

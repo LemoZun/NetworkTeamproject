@@ -18,7 +18,6 @@ namespace _1.Private.ParkJM.Scripts.States
 
         public override void Update()
         {
-            // 임시 잡힌상태 나가기
             if(player.jumpBufferCounter > 0f && player.isJumpable)
             {
                 player.ChangeState(E_PlayeState.Jump);

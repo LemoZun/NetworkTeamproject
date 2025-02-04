@@ -44,9 +44,9 @@ public class PlayerView : MonoBehaviourPun, IPunObservable
         Animator.StringToHash("Struggling"),
     };
 
-    public void BroadCastTriggerParameter(E_AniParameters _parameter)
+    public void BroadCastTriggerParameter(E_AniParameters parameter)
     {
-        photonView.RPC(nameof(SetTriggerParameter_RPC), RpcTarget.All, _parameter);
+        photonView.RPC(nameof(SetTriggerParameter_RPC), RpcTarget.All, parameter);
     }
     public void BroadCastBoolParameter(E_AniParameters _parameter, bool boolValue)
     {

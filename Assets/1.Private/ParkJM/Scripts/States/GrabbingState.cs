@@ -15,6 +15,7 @@ namespace _1.Private.ParkJM.Scripts.States
         {
             _moveSpeedOnGrab = player.model.moveSpeed * GrabSpeedOffset;
         }
+
         public override void Enter()
         {
             grabbedObject = null;
@@ -22,20 +23,19 @@ namespace _1.Private.ParkJM.Scripts.States
             grabCheckRoutine ??= player.StartCoroutine(CheckGrabPointRoutine());
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         public override void Update()
         {
-            if (!RemoteInput.inputs[player.model.playerNumber].grabInput)
-            {
-                ReleaseGrabbedObject();
-                player.ChangeState(E_PlayeState.Idle);
-            }
+            if (RemoteInput.inputs[player.model.playerNumber].grabInput)
+                return;
+            ReleaseGrabbedObject();
+            player.ChangeState(E_PlayeState.Idle);
         }
 
         public override void FixedUpdate()
         {
             ApplyMovement();
-
-            if(grabbedObject != null)
+            if (grabbedObject != null)
             {
                 PushOrPullGrabbedObject(grabbedObject);
             }
@@ -53,7 +53,7 @@ namespace _1.Private.ParkJM.Scripts.States
             ReleaseGrabbedObject();
             player.view.SetBoolParameter(E_AniParameters.Pushing, false);
             player.view.SetBoolParameter(E_AniParameters.Pulling, false);
-            
+
             if (grabCheckRoutine != null)
             {
                 player.StopCoroutine(grabCheckRoutine);
@@ -63,7 +63,7 @@ namespace _1.Private.ParkJM.Scripts.States
 
         private void ReleaseGrabbedObject()
         {
-            if (grabbedObject == null) 
+            if (grabbedObject == null)
                 return;
             grabbedObject.GetComponent<IGrabbable>().OnGrabbedLeave();
             grabbedObject = null;
@@ -82,12 +82,13 @@ namespace _1.Private.ParkJM.Scripts.States
                 targetVel = player.moveDir * _moveSpeedOnGrab;
                 targetVel.y = player.rb.velocity.y;
             }
+
             player.rb.velocity = targetVel;
         }
 
         private IEnumerator CheckGrabPointRoutine()
         {
-            while (true)
+            while (player.curState == E_PlayeState.Grabbed)
             {
                 GameObject detectedObject = player.CheckGrabPoint();
 
@@ -97,25 +98,23 @@ namespace _1.Private.ParkJM.Scripts.States
                     ReleaseGrabbedObject();
                     grabbedObject = detectedObject;
 
-                    if (grabbedObject != null) 
+                    if (grabbedObject != null)
                     {
                         // 새롭게 잡힌 오브젝트가 있을 경우
                         player.model.InvokePlayerGrabbing();
                     }
                 }
+
                 yield return new WaitForSeconds(0.1f);
             }
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private void PushOrPullGrabbedObject(GameObject grabObject)
         {
             Rigidbody grabbedObjectRb = grabObject.gameObject.GetComponent<Rigidbody>();
-
             if (grabbedObjectRb == null || grabbedObjectRb.isKinematic)
-            {
-                Debug.LogWarning("rigidbody가 없거나 Kinematic 임");
                 return;
-            }
 
             Vector3 camForward = player.camTransform.forward;
             camForward.y = 0f;
@@ -123,58 +122,55 @@ namespace _1.Private.ParkJM.Scripts.States
 
             // 내적 계산 후 push인지 pull인지 결정
             float dotProduct = Vector3.Dot(camForward, moveDir);
-
             switch (dotProduct)
             {
-                case > 0f:
+                // grabbedObjectRb.velocity = moveDir * player.model.grabForce 적용;
+                // 밀기 당기기 애니메이션 구분
+                case > 0f: // 밀기
                 {
-                    // 밀기
                     grabbedObjectRb.velocity = moveDir * player.model.grabForce;
-                    if (player.view.GetBoolParameter(E_AniParameters.Pushing)) 
+                    if (player.view.GetBoolParameter(E_AniParameters.Pushing))
                         return;
                     player.view.SetBoolParameter(E_AniParameters.Pushing, true);
                     player.view.SetBoolParameter(E_AniParameters.Pulling, false);
                     break;
                 }
-                case < 0f:
+                case < 0f: // 당기기
                 {
-                    // 당기기
                     grabbedObjectRb.velocity = moveDir * player.model.grabForce;
-                    if (player.view.GetBoolParameter(E_AniParameters.Pulling)) 
+                    if (player.view.GetBoolParameter(E_AniParameters.Pulling))
                         return;
                     player.view.SetBoolParameter(E_AniParameters.Pushing, false);
                     player.view.SetBoolParameter(E_AniParameters.Pulling, true);
                     break;
                 }
             }
-
-
-
-
-            //grabbedObjectRb.AddForce(player.moveDir * player.model.grabForce, ForceMode.Force); // 지속적으로 해주는거라 이러면 안됨
-
-            // 잡았다가 놓치는경우
-            //if (grabbedObjectRb == null)
-            //{
-            //    player.ChangeState(E_PlayeState.Idle);
-            //}
-
-            //grabbedObject.gameObject.GetComponent<Rigidbody>().velocity = targetVelocity;
-            //Debug.Log($"TargetVelocity : {targetVelocity}");
-            //Debug.Log($"잡힌 오브젝트 이름 : {grabbedObject.gameObject.name}");
-
-
-            //if (player.moveDir != Vector3.zero)
-            //{
-            //    Quaternion targetRotation = Quaternion.LookRotation(player.moveDir);
-            //    targetRotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
-
-            //    player.transform.rotation = Quaternion.Slerp(
-            //        player.transform.rotation,
-            //        targetRotation,
-            //        Time.fixedDeltaTime * 15 // 수정필요
-            //    );
-            //}
         }
+
+        //grabbedObjectRb.AddForce(player.moveDir * player.model.grabForce, ForceMode.Force); // 지속적으로 해주는거라 이러면 안됨
+
+        // 잡았다가 놓치는경우
+        //if (grabbedObjectRb == null)
+        //{
+        //    player.ChangeState(E_PlayeState.Idle);
+        //}
+
+        //grabbedObject.gameObject.GetComponent<Rigidbody>().velocity = targetVelocity;
+        //Debug.Log($"TargetVelocity : {targetVelocity}");
+        //Debug.Log($"잡힌 오브젝트 이름 : {grabbedObject.gameObject.name}");
+
+
+        //if (player.moveDir != Vector3.zero)
+        //{
+        //    Quaternion targetRotation = Quaternion.LookRotation(player.moveDir);
+        //    targetRotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
+
+        //    player.transform.rotation = Quaternion.Slerp(
+        //        player.transform.rotation,
+        //        targetRotation,
+        //        Time.fixedDeltaTime * 15 // 수정필요
+        //    );
+        //}
     }
 }
+
